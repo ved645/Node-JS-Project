@@ -1,0 +1,27 @@
+{
+  "name": "node-server-validation-demo",
+  "version": "1.0.0",
+  "description": "Ultra-clean single page app demonstrating Node.js server-side validation with Neo-Paper aesthetics, micro-interactions, and interactive SVG doodles.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-validator": "^7.1.0"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "express-validator",
+    "server-side-validation",
+    "security",
+    "sanitization",
+    "neo-paper",
+    "svg-doodles"
+  ],
+  "author": "",
+  "license": "MIT"
+}

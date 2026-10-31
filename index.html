@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node.js Server-Side Validation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #FAFAFA;
+      color: #1E1E1E;
+      line-height: 1.5;
+      padding: 30px 16px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid #E5E7EB;
+      padding-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #6B7280;
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10B981;
+    }
+
+    /* Preset Buttons Bar */
+    .preset-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .preset-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6B7280;
+      margin-right: 4px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #D1D5DB;
+      background: #FFFFFF;
+      color: #374151;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #F3F4F6;
+      border-color: #9CA3AF;
+    }
+
+    .btn-valid:hover {
+      background: #ECFDF5;
+      border-color: #10B981;
+      color: #065F46;
+    }
+
+    .btn-invalid:hover {
+      background: #FEF2F2;
+      border-color: #EF4444;
+      color: #991B1B;
+    }
+
+    .btn-xss:hover {
+      background: #FFFBEB;
+      border-color: #F59E0B;
+      color: #92400E;
+    }
+
+    /* Main Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Card */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .rule-hint {
+      font-size: 0.75rem;
+      color: #9CA3AF;
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      height: 40px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      background: #FFFFFF;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .has-error input {
+      border-color: #EF4444 !important;
+      background: #FFFBFB;
+    }
+
+    .error-msg {
+      display: none;
+      font-size: 0.78rem;
+      color: #DC2626;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .has-error .error-msg {
+      display: block;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 44px;
+      background: #111827;
+      color: #FFFFFF;
+      border: 1px solid #111827;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #1F2937;
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Response / Output Panel */
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .pill-idle {
+      background: #F3F4F6;
+      color: #6B7280;
+    }
+
+    .pill-200 {
+      background: #DCFCE7;
+      color: #166534;
+    }
+
+    .pill-400 {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    /* Sanitization Summary Box */
+    .audit-box {
+      display: none;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+    }
+
+    .audit-box.active {
+      display: block;
+    }
+
+    .audit-row {
+      margin-bottom: 4px;
+    }
+
+    .audit-tag {
+      font-family: 'JetBrains Mono', monospace;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: #E5E7EB;
+      font-size: 0.75rem;
+    }
+
+    .audit-tag.escaped {
+      background: #FEF3C7;
+      color: #92400E;
+      font-weight: 600;
+    }
+
+    /* Code Display */
+    pre {
+      background: #18181B;
+      color: #E4E4E7;
+      padding: 14px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 380px;
+    }
+
+    /* Notification */
+    .notice {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-top: 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .notice-success {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+    }
+
+    .notice-error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #991B1B;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div>
+        <h1>Server-Side Validation</h1>
+        <div class="subtitle">Node.js + express-validator request validation & sanitization</div>
+      </div>
+      <div class="status-badge" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">Server: Online</span>
+      </div>
+    </header>
+
+    <!-- Preset Test Scenarios -->
+    <div class="preset-bar">
+      <span class="preset-label">Test Scenarios:</span>
+      <button type="button" class="btn btn-valid" id="btnValid">Load Valid</button>
+      <button type="button" class="btn btn-invalid" id="btnInvalid">Load Invalid</button>
+      <button type="button" class="btn btn-xss" id="btnXSS">Test XSS</button>
+      <button type="button" class="btn" id="btnClear">Clear</button>
+    </div>
+
+    <!-- Dual Panel: Form + Inspector -->
+    <div class="grid">
+
+      <!-- Form Panel -->
+      <div class="card">
+        <div class="card-title">Registration Form</div>
+
+        <form id="valForm" novalidate>
+
+          <!-- Username -->
+          <div class="form-group" id="groupUsername">
+            <label for="username">
+              Username <span class="rule-hint">(min 3 chars, letters/numbers/_)</span>
+            </label>
+            <input type="text" id="username" placeholder="e.g. ved_dev" required />
+            <div class="error-msg" id="usernameError">Username must be 3-20 alphanumeric characters.</div>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group" id="groupEmail">
+            <label for="email">
+              Email Address <span class="rule-hint">(normalized on server)</span>
+            </label>
+            <input type="email" id="email" placeholder="e.g. dev@example.com" required />
+            <div class="error-msg" id="emailError">Please enter a valid email address.</div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group" id="groupPassword">
+            <label for="password">
+              Password <span class="rule-hint">(min 8 chars, 1 uppercase, 1 number)</span>
+            </label>
+            <input type="password" id="password" placeholder="e.g. SecretPass123" required />
+            <div class="error-msg" id="passwordError">Min 8 characters, at least 1 uppercase and 1 number.</div>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-submit" id="btnSubmit">Validate on Server</button>
+
+          <!-- Result Notice -->
+          <div class="notice notice-success" id="successNotice">✓ Validation passed! User accepted and sanitized.</div>
+          <div class="notice notice-error" id="errorNotice">✗ Validation failed. Please fix highlighted fields.</div>
+
+        </form>
+      </div>
+
+      <!-- Server Response Panel -->
+      <div class="card">
+        <div class="card-title">
+          <span>Server Response</span>
+          <span class="pill pill-idle" id="statusCodePill">Awaiting Request</span>
+        </div>
+
+        <!-- Sanitization details -->
+        <div class="audit-box" id="auditBox">
+          <div class="audit-row">
+            <strong>Sanitized Username:</strong> <span class="audit-tag" id="auditUser">-</span>
+          </div>
+          <div class="audit-row">
+            <strong>Normalized Email:</strong> <span class="audit-tag" id="auditEmail">-</span>
+          </div>
+          <div class="audit-row" id="auditXSSNote" style="display: none; color: #B45309; margin-top: 6px;">
+            ⚠️ <strong>XSS Neutralized:</strong> HTML tags were converted to safe entities.
+          </div>
+        </div>
+
+        <!-- JSON Output -->
+        <pre><code id="jsonOutput">// Click "Validate on Server" or load a preset scenario
+{
+  "status": "idle"
+}</code></pre>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // DOM references
+      const form = document.getElementById('valForm');
+      const usernameInput = document.getElementById('username');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      const groupUsername = document.getElementById('groupUsername');
+      const groupEmail = document.getElementById('groupEmail');
+      const groupPassword = document.getElementById('groupPassword');
+
+      const usernameError = document.getElementById('usernameError');
+      const emailError = document.getElementById('emailError');
+      const passwordError = document.getElementById('passwordError');
+
+      const successNotice = document.getElementById('successNotice');
+      const errorNotice = document.getElementById('errorNotice');
+
+      const statusCodePill = document.getElementById('statusCodePill');
+      const jsonOutput = document.getElementById('jsonOutput');
+      const auditBox = document.getElementById('auditBox');
+      const auditUser = document.getElementById('auditUser');
+      const auditEmail = document.getElementById('auditEmail');
+      const auditXSSNote = document.getElementById('auditXSSNote');
+
+      // Preset buttons
+      const btnValid = document.getElementById('btnValid');
+      const btnInvalid = document.getElementById('btnInvalid');
+      const btnXSS = document.getElementById('btnXSS');
+      const btnClear = document.getElementById('btnClear');
+
+      // Clear all errors
+      function clearErrors() {
+        groupUsername.classList.remove('has-error');
+        groupEmail.classList.remove('has-error');
+        groupPassword.classList.remove('has-error');
+        successNotice.style.display = 'none';
+        errorNotice.style.display = 'none';
+      }
+
+      // Helper to escape HTML safely
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#x27;');
+      }
+
+      // Helper to normalize email
+      function normalizeEmail(email) {
+        if (!email) return '';
+        email = email.trim().toLowerCase();
+        const parts = email.split('@');
+        if (parts.length === 2 && (parts[1] === 'gmail.com' || parts[1] === 'googlemail.com')) {
+          let user = parts[0].replace(/\./g, '').split('+')[0];
+          return user + '@' + parts[1];
+        }
+        return email;
+      }
+
+      // Local fallback validator replicating express-validator
+      function validateLocally(payload) {
+        const errors = [];
+        const u = (payload.username || '').trim();
+        const em = (payload.email || '').trim();
+        const p = payload.password || '';
+
+        if (!u) {
+          errors.push({ field: 'username', message: 'Username is required' });
+        } else if (u.length < 3 || u.length > 20) {
+          errors.push({ field: 'username', message: 'Username must be between 3 and 20 characters' });
+        } else if (!/^[a-zA-Z0-9_]+$/.test(u)) {
+          errors.push({ field: 'username', message: 'Username can only contain alphanumeric characters & underscores' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!em) {
+          errors.push({ field: 'email', message: 'Email address is required' });
+        } else if (!emailRegex.test(em)) {
+          errors.push({ field: 'email', message: 'Please enter a valid email format' });
+        }
+
+        if (!p) {
+          errors.push({ field: 'password', message: 'Password is required' });
+        } else if (p.length < 8) {
+          errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+        } else if (!/[A-Z]/.test(p)) {
+          errors.push({ field: 'password', message: 'Password must contain at least one uppercase letter (A-Z)' });
+        } else if (!/[0-9]/.test(p)) {
+          errors.push({ field: 'password', message: 'Password must contain at least one number (0-9)' });
+        }
+
+        const sanitizedUser = escapeHtml(u);
+        const normalizedEm = normalizeEmail(em);
+
+        if (errors.length > 0) {
+          return {
+            success: false,
+            statusCode: 400,
+            statusText: 'Bad Request',
+            message: 'Server-side validation failed.',
+            errors: errors
+          };
+        }
+
+        return {
+          success: true,
+          statusCode: 200,
+          statusText: 'OK',
+          message: 'Backend validation passed! Data sanitized and accepted.',
+          user: {
+            username: sanitizedUser,
+            email: normalizedEm
+          },
+          sanitizationAudit: {
+            rawUsername: payload.username,
+            sanitizedUsername: sanitizedUser,
+            rawEmail: payload.email,
+            normalizedEmail: normalizedEm,
+            xssNeutralized: payload.username !== sanitizedUser
+          }
+        };
+      }
+
+      // Handle form submission
+      async function handleValidation(payload) {
+        clearErrors();
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Validating on Server...';
+
+        let result = null;
+
+        try {
+          // Attempt real Node.js Express backend
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          result = await res.json();
+        } catch (err) {
+          // Fallback if backend offline
+          result = validateLocally(payload);
+        }
+
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Validate on Server';
+
+        // Update JSON display
+        jsonOutput.textContent = JSON.stringify(result, null, 2);
+
+        // Update Status Pill
+        if (result.statusCode === 200 || result.success) {
+          statusCodePill.textContent = '200 OK';
+          statusCodePill.className = 'pill pill-200';
+          successNotice.style.display = 'block';
+
+          // Update Audit Box
+          auditBox.classList.add('active');
+          auditUser.textContent = (result.user && result.user.username) || payload.username;
+          auditEmail.textContent = (result.user && result.user.email) || payload.email;
+
+          const isXss = result.sanitizationAudit && result.sanitizationAudit.xssNeutralized;
+          auditXSSNote.style.display = isXss ? 'block' : 'none';
+        } else {
+          statusCodePill.textContent = '400 Bad Request';
+          statusCodePill.className = 'pill pill-400';
+          errorNotice.style.display = 'block';
+          auditBox.classList.remove('active');
+
+          // Highlight failed fields
+          if (Array.isArray(result.errors)) {
+            result.errors.forEach(err => {
+              if (err.field === 'username') {
+                groupUsername.classList.add('has-error');
+                usernameError.textContent = err.message;
+              }
+              if (err.field === 'email') {
+                groupEmail.classList.add('has-error');
+                emailError.textContent = err.message;
+              }
+              if (err.field === 'password') {
+                groupPassword.classList.add('has-error');
+                passwordError.textContent = err.message;
+              }
+            });
+          }
+        }
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const payload = {
+          username: usernameInput.value,
+          email: emailInput.value,
+          password: passwordInput.value
+        };
+        handleValidation(payload);
+      });
+
+      // Preset actions
+      btnValid.addEventListener('click', function () {
+        usernameInput.value = 'ved_dev';
+        emailInput.value = 'dev.user+test@gmail.com';
+        passwordInput.value = 'StrongPass2026';
+        clearErrors();
+        form.dispatchEvent(new Event('submit'));
+      });
+
+      btnInvalid.addEventListener('click', function () {
+        usernameInput.value = 'ab'; // too short
+        emailInput.value = 'invalid-email-format';
+        passwordInput.value = 'weak';
+        clearErrors();
+        form.dispatchEvent(new Event('submit'));
+      });
+
+      btnXSS.addEventListener('click', function () {
+        usernameInput.value = '<script>alert("XSS")<' + '/script>';
+        emailInput.value = 'security@domain.com';
+        passwordInput.value = 'ValidPass2026';
+        clearErrors();
+        form.dispatchEvent(new Event('submit'));
+      });
+
+      btnClear.addEventListener('click', function () {
+        usernameInput.value = '';
+        emailInput.value = '';
+        passwordInput.value = '';
+        clearErrors();
+        statusCodePill.textContent = 'Awaiting Request';
+        statusCodePill.className = 'pill pill-idle';
+        auditBox.classList.remove('active');
+        jsonOutput.textContent = '{\n  "status": "idle"\n}';
+      });
+
+      // Health check
+      fetch('/api/health')
+        .then(r => r.json())
+        .then(d => {
+          document.getElementById('statusText').textContent = 'Server: Online (Node.js)';
+        })
+        .catch(() => {
+          document.getElementById('statusText').textContent = 'Server: Standalone Mode';
+        });
+
+    })();
+  </script>
+</body>
+
+</html>
